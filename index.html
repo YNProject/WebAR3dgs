@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR Path Debug</title>
+    <title>3DGS Finder</title>
     <style>
-        body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
-        #status {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: rgba(0,0,0,0.8); padding: 10px; z-index: 10000;
-            font-size: 12px; border-bottom: 1px solid #0f0; white-space: pre-wrap;
-        }
-        #ARButton { bottom: 50px !important; }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; }
+        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 5px; z-index: 10; font-size: 11px; }
+        #controls { position: fixed; bottom: 100px; left: 10px; z-index: 20; display: flex; flex-wrap: wrap; gap: 5px; }
+        button { padding: 8px; font-size: 12px; background: #444; color: white; border: 1px solid #fff; }
     </style>
 </head>
 <body>
-    <div id="status">Status: Initializing...</div>
+    <div id="status">Initializing...</div>
+    <div id="controls">
+        <button onclick="window.changeScale(0.001)">Scale: 0.001</button>
+        <button onclick="window.changeScale(0.01)">Scale: 0.01</button>
+        <button onclick="window.changeScale(0.1)">Scale: 0.1</button>
+        <button onclick="window.changeScale(1)">Scale: 1</button>
+        <button onclick="window.changeScale(10)">Scale: 10</button>
+    </div>
 
     <script type="importmap">
     {
@@ -32,61 +36,44 @@
         import { ARButton } from "three/addons/webxr/ARButton.js";
         import { SplatMesh } from "@sparkjsdev/spark";
 
-        const status = document.getElementById('status');
-        const log = (m) => { 
-            status.innerText += "\n> " + m; 
-            console.log(m);
+        const log = (m) => { document.getElementById('status').innerText += "\n> " + m; };
+        let currentSplat = null;
+
+        // グローバル関数として公開
+        window.changeScale = (s) => {
+            if (currentSplat) {
+                currentSplat.scale.set(s, s, s);
+                log("Scale changed to: " + s);
+            }
         };
 
         async function init() {
-            try {
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.xr.enabled = true;
-                document.body.appendChild(renderer.domElement);
-                document.body.appendChild(ARButton.createButton(renderer));
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            document.body.appendChild(ARButton.createButton(renderer));
 
-                log("Three.js Ready.");
+            const modelUrl = new URL('./model/A.spz', window.location.href).href;
+            
+            const splat = new SplatMesh({ 
+                url: modelUrl,
+                onLoad: () => {
+                    log("LOAD SUCCESS!");
+                    currentSplat = splat;
+                    // 最初は 0.1倍で、目の前に配置
+                    splat.scale.set(0.1, 0.1, 0.1);
+                    splat.position.set(0, 0, -2);
+                }
+            });
+            scene.add(splat);
 
-                // --- パスの解決 ---
-                // GitHub Pagesのサブディレクトリ対策として、絶対URLを生成
-                const modelUrl = new URL('./model/A.spz', window.location.href).href;
-                log("Trying to load: " + modelUrl);
-
-                // --- splatMeshの作成部分を以下に差し替え ---
-const splat = new SplatMesh({ 
-    url: modelUrl,
-    onLoad: () => {
-        log("SUCCESS: A.spz loaded!");
-        
-        // 1. サイズをかなり小さくする (0.01 = 1%)
-        splat.scale.set(0.01, 0.01, 0.01);
-        
-        // 2. 位置を調整 (正面2m、下に1.5m)
-        splat.position.set(0, -1.5, -2); 
-        
-        // 3. 回転が必要な場合が多いので、少し傾けてみる
-        splat.rotation.x = -Math.PI / 2; 
-    },
-    onError: (err) => {
-        log("ERROR: Load failed.");
-    }
-});
-                
-                scene.add(splat);
-
-                renderer.setAnimationLoop(() => {
-                    if (splat) splat.rotation.y += 0.01;
-                    renderer.render(scene, camera);
-                });
-
-            } catch (e) {
-                log("FATAL: " + e.message);
-            }
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
         }
-
         window.addEventListener('load', init);
     </script>
 </body>
