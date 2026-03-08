@@ -1,4 +1,3 @@
-/* ブラウザの基本設定をリセット */
 html, body {
     margin: 0 !important;
     padding: 0 !important;
@@ -8,71 +7,40 @@ html, body {
     background-color: #000 !important;
 }
 
-/* --- AR描画（A-Frame/MindAR）の固定 --- */
-/* A-Frameが作るキャンバスとビデオを背面に追い出す */
+/* MindARが自動生成するUI（青画面など）を強制消去 */
+.mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-error, .a-loader-title {
+    display: none !important;
+}
+
+/* A-Frameのキャンバスとビデオを背面に */
 .a-canvas, video {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    object-fit: cover !important;
-    z-index: 1 !important; /* 最背面 */
+    z-index: 1 !important;
 }
 
-/* A-Frame・MindARの不要なUIを消去 */
-.a-loader-title, .a-enter-vr, .a-enter-ar,
-.mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-error {
-    display: none !important;
-}
-
-/* --- UI要素（オーバーレイ・ボタン） --- */
-/* 開始画面：常に全画面の最前面 */
 #overlay {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.9) !important;
-    color: white !important;
-    z-index: 9999 !important; /* 絶対に最前面 */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white; z-index: 9999;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
 }
 
-/* 下部操作パネル：カメラより前、オーバーレイより後ろ */
 #ui-container {
-    display: none; /* 初期は隠す */
+    display: none;
     position: fixed !important;
-    bottom: 40px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 90% !important;
-    max-width: 400px !important;
-    z-index: 5000 !important;
-    justify-content: center;
-    gap: 15px;
-    pointer-events: none; /* コンテナはクリックを通す */
+    bottom: 40px; left: 50%; transform: translateX(-50%);
+    z-index: 5000; gap: 15px;
 }
 
 #startButton, #backButton, #shopButton {
-    pointer-events: auto !important; /* ボタンだけクリック有効 */
-    padding: 14px 28px !important;
-    border-radius: 50px !important;
-    border: 2px solid white !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
+    padding: 14px 28px; border-radius: 50px; border: 2px solid white;
+    font-weight: bold; cursor: pointer; color: white; background: rgba(0,0,0,0.7);
 }
 
-#startButton { background: #007AFF !important; border: none !important; }
-#shopButton { display: none; background: #FFD700 !important; color: #000 !important; border-color: #FFD700 !important; }
+#startButton { background: #007AFF; border: none; }
+#shopButton { display: none; background: #FFD700; color: #000; border-color: #FFD700; }
 
-/* ガイド画像のサイズ固定 */
-.marker-guide { display: flex; gap: 10px; margin: 20px 0; }
-.guide-item img { width: 80px; height: 80px; border-radius: 8px; border: 1px solid white; }
+.marker-guide img { width: 80px; height: 80px; border-radius: 8px; border: 1px solid #fff; margin: 0 5px; }

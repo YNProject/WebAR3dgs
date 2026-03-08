@@ -24,8 +24,8 @@
         <h1>SupercupWebAR</h1>
         <p>マーカーをスキャンしてください</p>
         <div class="marker-guide">
-            <div class="guide-item"><img src="img/sc1bcc.png"></div>
-            <div class="guide-item"><img src="img/sc2ots.png"></div>
+            <img src="img/sc1bcc.png" alt="マーカー1">
+            <img src="img/sc2ots.png" alt="マーカー2">
         </div>
         <button id="startButton">ARを開始する</button>
     </div>
@@ -40,8 +40,7 @@
         mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no;" 
         embedded
         vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-        renderer="colorManagement: true; transparent: true; alpha: true;">
+        device-orientation-permission-ui="enabled: false">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
