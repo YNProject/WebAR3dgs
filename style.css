@@ -1,31 +1,62 @@
+/* --- 基本リセット --- */
 html, body {
     margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
-    background-color: transparent !important;
+    font-family: -apple-system, sans-serif;
+    background-color: #000;
 }
 
-/* A-Frame標準のローディング画面を非表示にする */
-.a-loader-title { display: none !important; }
-
-/* カメラ映像の背面固定 */
-video {
-    position: fixed !important; top: 50% !important; left: 50% !important;
-    min-width: 100% !important; min-height: 100% !important;
-    transform: translate(-50%, -50%) !important;
-    object-fit: cover !important; z-index: -2 !important;
+/* --- AR描画（A-Frame） --- */
+.a-canvas, video {
+    position: fixed !important; top: 0; left: 0;
+    width: 100% !important; height: 100% !important;
+    object-fit: cover !important; z-index: 1; /* 背面 */
 }
 
+/* MindAR標準UIの消去 */
+.mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-error {
+    display: none !important;
+}
+
+/* --- オーバーレイ（開始画面） --- */
 #overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9); color: white; z-index: 100000;
-    display: flex; justify-content: center; align-items: center; text-align: center;
+    background: rgba(0, 0, 0, 0.95);
+    color: white; z-index: 1000; /* 最前面 */
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
 }
 
+.marker-guide {
+    display: flex; gap: 15px; margin: 25px 0;
+}
+
+.guide-item img {
+    width: 90px; height: 90px; border: 2px solid white; border-radius: 12px;
+}
+
+#startButton {
+    padding: 16px 50px; font-size: 1.1rem; font-weight: bold;
+    color: white; background: #007AFF; border: none; border-radius: 50px;
+    cursor: pointer;
+}
+
+/* --- 操作パネル --- */
 #ui-container {
-    display: none; position: fixed; bottom: 40px; left: 50%;
-    transform: translateX(-50%); z-index: 999;
-    flex-direction: row; gap: 15px;
+    display: none; /* 初期は隠す */
+    position: fixed; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 500; /* ARより前、オーバーレイより後ろ */
+    gap: 15px;
+    pointer-events: none; /* コンテナ自体はクリックを通す */
 }
 
-#startButton, #backButton, #shopButton {
-    cursor: pointer; pointer-events: auto;
+#backButton, #shopButton {
+    pointer-events: auto; /* ボタン単体はクリック可能 */
+    padding: 12px 24px; border: 2px solid white; border-radius: 50px;
+    font-size: 14px; font-weight: bold; color: white;
+    background: rgba(0, 0, 0, 0.7); cursor: pointer;
+}
+
+#shopButton {
+    display: none; background: #FFD700; color: #000; border-color: #FFD700;
 }

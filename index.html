@@ -39,7 +39,7 @@
 
     <a-scene 
         id="ar-scene"
-        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiScanning: yes; uiLoading: no; uiError: no;" 
+        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no;" 
         embedded
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
@@ -48,11 +48,11 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target-0" mindar-image-target="targetIndex: 0">
-            <a-entity id="model-a" spark-model="src: model/A.spz" scale="1 1 1" position="0 0 0"></a-entity>
+            <a-entity spark-model="src: model/A.spz"></a-entity>
         </a-entity>
 
         <a-entity id="target-1" mindar-image-target="targetIndex: 1">
-            <a-entity id="model-b" spark-model="src: model/B.spz" scale="1 1 1" position="0 0 0"></a-entity>
+            <a-entity spark-model="src: model/B.spz"></a-entity>
         </a-entity>
     </a-scene>
 

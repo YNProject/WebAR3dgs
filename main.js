@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { SplatMesh } from "@sparkjsdev/spark";
 
-// A-Frame用のSparkコンポーネント登録
+// Sparkモデルを表示するためのA-Frameコンポーネント
 AFRAME.registerComponent('spark-model', {
     schema: { src: {type: 'string'} },
     init: function () {
@@ -20,47 +20,33 @@ window.addEventListener("load", () => {
 
     let currentUrl = "";
 
-    // 起動処理
+    // AR起動
     startButton.addEventListener('click', () => {
         overlay.style.display = 'none';
-        uiContainer.setAttribute('style', 'display: flex !important');
+        uiContainer.style.display = 'flex'; // ボタンを表示
         
-        // A-Frameのシーンがロードされるのを待ってから開始
-        if (sceneEl.hasLoaded) {
-            startSystem();
-        } else {
-            sceneEl.addEventListener('loaded', startSystem);
-        }
-    });
-
-    const startSystem = () => {
         const arSystem = sceneEl.systems["mindar-image-system"];
         if (arSystem) {
-            arSystem.start(); // ここでカメラが起動します
+            arSystem.start();
         }
+    });
+
+    // 検出イベント管理
+    const setupTarget = (id, url) => {
+        const target = document.getElementById(id);
+        target.addEventListener("targetFound", () => {
+            currentUrl = url;
+            shopButton.style.display = 'block';
+        });
+        target.addEventListener("targetLost", () => {
+            shopButton.style.display = 'none';
+        });
     };
 
-    // ターゲットイベント
-    document.getElementById("target-0").addEventListener("targetFound", () => {
-        currentUrl = "https://www.meiji.co.jp/products/icecream/4902705098626.html";
-        shopButton.style.display = 'block';
-        document.body.classList.add('target-found');
-    });
-    
-    document.getElementById("target-1").addEventListener("targetFound", () => {
-        currentUrl = "https://www.meiji.co.jp/sweets/icecream/essel/otona/";
-        shopButton.style.display = 'block';
-        document.body.classList.add('target-found');
-    });
+    setupTarget("target-0", "https://www.meiji.co.jp/products/icecream/4902705098626.html");
+    setupTarget("target-1", "https://www.meiji.co.jp/sweets/icecream/essel/otona/");
 
-    // 消失イベント
-    ["target-0", "target-1"].forEach(id => {
-        document.getElementById(id).addEventListener("targetLost", () => {
-            shopButton.style.display = 'none';
-            document.body.classList.remove('target-found');
-        });
-    });
-
+    // ボタンクリック
     shopButton.addEventListener('click', () => { if (currentUrl) window.open(currentUrl, '_blank'); });
     backButton.addEventListener('click', () => { location.reload(); });
 });
