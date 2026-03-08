@@ -1,61 +1,76 @@
 import * as THREE from "three";
 import { SplatMesh } from "@sparkjsdev/spark";
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
     const startButton = document.getElementById("startButton");
-    
+    const overlay = document.getElementById("overlay");
+    const uiContainer = document.getElementById("ui-container");
+    const shopButton = document.getElementById("shopButton");
+
     const startAR = async () => {
-        console.log("1. 起動ボタンが押されました");
-        
         try {
-            // MindARのチェック
-            if (typeof window.MINDAR === 'undefined') {
-                throw new Error("MindARライブラリがロードされていません。インターネット接続を確認してください。");
+            // MindARの読み込みチェック
+            if (!window.MINDAR || !window.MINDAR.IMAGE) {
+                throw new Error("MindARライブラリがまだ準備できていません。");
             }
 
+            // --- MindAR Three.js 初期化 ---
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.getElementById("ar-container"),
-                imageTargetSrc: 'img/targetsc1.mind',
+                imageTargetSrc: 'img/targetsc1.mind', // マーカーファイルのパス
             });
 
             const { renderer, scene, camera } = mindarThree;
 
-            console.log("2. Sparkモデルを読み込みます...");
-            // モデルの読み込み。URLが間違っているとここで止まります。
+            // --- Spark モデル (SPZ) の読み込み ---
             const splatA = new SplatMesh({ url: "model/A.spz" });
             const splatB = new SplatMesh({ url: "model/B.spz" });
             
+            // 初期状態は非表示
             splatA.visible = false;
             splatB.visible = false;
 
+            // マーカー0（バナナチョコ）への紐付け
             const anchor0 = mindarThree.addAnchor(0);
             anchor0.group.add(splatA);
 
+            // マーカー1（大人ラベル）への紐付け
             const anchor1 = mindarThree.addAnchor(1);
             anchor1.group.add(splatB);
 
-            anchor0.onTargetFound = () => { splatA.visible = true; document.getElementById("shopButton").style.display = 'block'; };
-            anchor0.onTargetLost = () => { splatA.visible = false; document.getElementById("shopButton").style.display = 'none'; };
+            // --- 検出イベントの設定 ---
+            anchor0.onTargetFound = () => {
+                splatA.visible = true;
+                shopButton.style.display = 'block';
+                shopButton.onclick = () => window.open("https://www.meiji.co.jp/products/icecream/4902705098626.html", "_blank");
+            };
+            anchor0.onTargetLost = () => { splatA.visible = false; shopButton.style.display = 'none'; };
 
-            anchor1.onTargetFound = () => { splatB.visible = true; document.getElementById("shopButton").style.display = 'block'; };
-            anchor1.onTargetLost = () => { splatB.visible = false; document.getElementById("shopButton").style.display = 'none'; };
+            anchor1.onTargetFound = () => {
+                splatB.visible = true;
+                shopButton.style.display = 'block';
+                shopButton.onclick = () => window.open("https://www.meiji.co.jp/sweets/icecream/essel/otona/", "_blank");
+            };
+            anchor1.onTargetLost = () => { splatB.visible = false; shopButton.style.display = 'none'; };
 
-            console.log("3. カメラを起動します...");
+            // --- カメラ起動 ---
             await mindarThree.start();
-            
-            console.log("4. 描画ループを開始します");
+
+            // レンダリングループ (Sparkの描画に必須)
             renderer.setAnimationLoop(() => {
                 renderer.render(scene, camera);
             });
 
-            document.getElementById("overlay").style.display = 'none';
-            document.getElementById("ui-container").style.display = 'flex';
+            // 表示切り替え
+            overlay.style.display = 'none';
+            uiContainer.style.display = 'flex';
 
         } catch (err) {
-            console.error("重大なエラー:", err);
-            alert("エラー内容: " + err.message);
+            console.error(err);
+            alert("エラーが発生しました: " + err.message);
         }
     };
 
     startButton.addEventListener('click', startAR);
+    document.getElementById("backButton").addEventListener('click', () => location.reload());
 });

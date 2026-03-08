@@ -1,14 +1,14 @@
 html, body {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
     background-color: #000;
-    font-family: sans-serif;
+    font-family: -apple-system, sans-serif;
 }
 
-/* AR描画エリア */
+/* AR領域 */
 #ar-container {
     position: fixed;
     top: 0;
@@ -18,7 +18,7 @@ html, body {
     z-index: 1;
 }
 
-/* MindARが生成するビデオとキャンバスの調整 */
+/* マーカー検出用のビデオと3Dキャンバスを全画面に */
 #ar-container video, #ar-container canvas {
     position: absolute;
     top: 0;
@@ -28,52 +28,56 @@ html, body {
     object-fit: cover;
 }
 
-/* 開始オーバーレイ */
+/* オーバーレイ */
 #overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     color: white;
     z-index: 1000;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
 }
 
+.container { width: 90%; max-width: 400px; }
+
 .marker-guide {
     display: flex;
-    gap: 10px;
-    margin: 20px 0;
+    justify-content: center;
+    gap: 15px;
+    margin: 25px 0;
 }
 
 .guide-item img {
     width: 90px;
     height: 90px;
-    border: 2px solid white;
-    border-radius: 10px;
     object-fit: cover;
+    border: 2px solid #fff;
+    border-radius: 12px;
 }
 
 #startButton {
-    padding: 15px 40px;
+    padding: 18px 50px;
     font-size: 1.1rem;
-    background: #007AFF;
+    font-weight: bold;
     color: white;
+    background-color: #007AFF;
     border: none;
-    border-radius: 30px;
+    border-radius: 50px;
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
 }
 
-/* 操作UI */
+/* UIボタン */
 #ui-container {
     display: none;
     position: fixed;
-    bottom: 30px;
+    bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1001;
@@ -81,17 +85,14 @@ html, body {
 }
 
 #backButton, #shopButton {
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 1px solid white;
-    background: rgba(0,0,0,0.6);
-    color: white;
+    padding: 12px 25px;
+    border: 2px solid white;
+    border-radius: 50px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
+    color: white;
 }
 
-#shopButton {
-    display: none;
-    background: #FFD700;
-    color: #000;
-}
+#backButton { background: rgba(0, 0, 0, 0.7); }
+#shopButton { background: #FFD700; color: #000; border-color: #FFD700; }
