@@ -3,10 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark Professional AR</title>
-    <style>body { margin: 0; background: #000; }</style>
+    <title>Spark AR Final Coordinate Fix</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; }
+        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; z-index: 1000; font-family: monospace; font-size: 11px; }
+        #ARButton { bottom: 50px !important; }
+    </style>
 </head>
 <body>
+    <div id="status">Status: 待機中...</div>
+
     <script type="importmap">
     {
         "imports": {
@@ -16,53 +22,72 @@
         }
     }
     </script>
+
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
-        import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+        import { SplatMesh, SparkRenderer, SplatLoader } from '@sparkjsdev/spark';
+
+        const log = (m) => { document.getElementById('status').innerText = "Status: " + m; };
 
         async function init() {
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
-            
-            const renderer = new THREE.WebGLRenderer({ 
-                antialias: false, // ドキュメント推奨：絶対false
-                alpha: true 
-            });
+            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+            const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
             document.body.appendChild(ARButton.createButton(renderer));
 
-            // --- ドキュメントのヒントを全投入 ---
+            // SparkRendererの設定（AR最適化）
             const spark = new SparkRenderer({ 
                 renderer: renderer,
-                preUpdate: true,      // WebXRで強制的に更新を回す
-                sortRadial: true,     // WebXRで回転しても安定させる
-                lodSplatCount: 500000, // WebXR向けに軽量化
-                depthTest: false,     // 確実に最前面に出す
-                transparent: true     // 透明Passで描画
+                preUpdate: true, 
+                depthTest: false,
+                lodSplatCount: 500000 
             });
             scene.add(spark);
 
-            const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
-            const butterfly = new SplatMesh({ 
-                url: splatURL,
-                onLoad: () => {
-                    butterfly.position.set(0, 0, -1);
-                    console.log("Butterfly Loaded");
-                }
-            });
-            scene.add(butterfly);
+            // SplatLoaderを使用して確実に読み込む
+            const loader = new SplatLoader();
+            const url = 'https://sparkjs.dev/assets/splats/butterfly.spz';
+
+            log("START ARを押してください");
 
             renderer.setAnimationLoop(() => {
-                if (butterfly) butterfly.rotation.y += 0.01;
-                
-                // WebXR環境では手動で update を呼ぶのが安全
-                if (renderer.xr.isPresenting) {
+                if (renderer.xr.isPresenting && !window.modelLoadingStarted) {
+                    window.modelLoadingStarted = true;
+                    log("AR開始: モデルをダウンロード中...");
+
+                    loader.loadAsync(url, (event) => {
+                        if (event.type === "progress") {
+                            const p = (event.loaded / event.total * 100).toFixed(0);
+                            log(`DL中: ${p}%`);
+                        }
+                    })
+                    .then((packedSplats) => {
+                        const splatMesh = new SplatMesh({ packedSplats });
+                        
+                        // --- ドキュメントの重要ヒント：座標変換 ---
+                        // OpenCV(訓練時)からOpenGL(Web)への座標変換
+                        splatMesh.quaternion.set(1, 0, 0, 0); 
+                        
+                        // 目の前 1m に配置し、少し小さめ(0.5)にする
+                        splatMesh.position.set(0, 0, -1);
+                        splatMesh.scale.setScalar(0.5);
+                        
+                        scene.add(splatMesh);
+                        log("表示成功！目の前・足元・背後を確認してください");
+                        
+                        window.myButterfly = splatMesh;
+                    })
+                    .catch(e => log("Error: " + e.message));
+                }
+
+                if (window.myButterfly) {
+                    window.myButterfly.rotation.y += 0.01;
                     spark.update({ scene, camera });
                 }
-                
                 renderer.render(scene, camera);
             });
         }
