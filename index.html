@@ -2,63 +2,66 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SupercupWebAR</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark 2.0 WebAR Viewer</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        #ar-button {
+            position: absolute; bottom: 20px; left: 50%;
+            transform: translateX(-50%); padding: 12px 24px;
+            background: #fff; border: none; border-radius: 8px; font-weight: bold;
+        }
+    </style>
     <script type="importmap">
     {
         "imports": {
             "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.module.js",
+            "three/addons/": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/examples/jsm/",
             "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/preview/2.0.0/spark.module.js"
         }
     }
     </script>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script type="module">
+        import * as THREE from "three";
+        import { ARButton } from "three/addons/webxr/ARButton.js";
+        import { SplatMesh } from "@sparkjsdev/spark";
 
-    <div id="overlay">
-        <div class="container">
-            <h1>SupercupWebAR</h1>
-            <p>下のマーカーをスキャンしてください</p>
-            <div class="marker-guide">
-                <div class="guide-item">
-                    <img src="img/sc1bcc.png">
-                    <span>マーカー1</span>
-                </div>
-                <div class="guide-item">
-                    <img src="img/sc2ots.png">
-                    <span>マーカー2</span>
-                </div>
-            </div>
-            <button id="startButton">ARを開始する</button>
-        </div>
-    </div>
-
-    <div id="ui-container">
-        <button id="backButton">タイトルへ戻る</button>
-        <button id="shopButton">詳しく見る</button>
-    </div>
-
-    <a-scene 
-        id="ar-scene"
-        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
-        embedded
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
+        // --- シーン設定 ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
         
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.xr.enabled = true; // WebXRを有効化
+        document.body.appendChild(renderer.domElement);
 
-        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
-            <a-entity spark-model="src: model/A.spz"></a-entity>
-        </a-entity>
-        <a-entity id="target-1" mindar-image-target="targetIndex: 1">
-            <a-entity spark-model="src: model/B.spz"></a-entity>
-        </a-entity>
-    </a-scene>
+        // AR開始ボタンを追加
+        document.body.appendChild(ARButton.createButton(renderer));
 
-    <script type="module" src="main.js"></script>
+        // --- Spark 2.0 スプラット読み込み ---
+        // A.spz が同じフォルダにある想定です
+        const splat = new SplatMesh({ url: "A.spz" });
+        
+        // カメラの目の前（3m奥）に配置
+        splat.position.set(0, 0, -3);
+        scene.add(splat);
+
+        // --- レンダリングループ ---
+        renderer.setAnimationLoop(() => {
+            // 必要に応じて回転させる
+            // splat.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        });
+
+        // リサイズ対応
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 </html>
