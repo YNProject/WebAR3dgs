@@ -3,18 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spark • WebAR Support</title>
+    <title>Spark • WebAR Fix</title>
     <style>
-      body { margin: 0; background-color: #000; color: white; }
-      /* ボタンが確実に画面に映るようにする */
-      #ARButton {
-        bottom: 50px !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: black !important;
-      }
+      body { margin: 0; background-color: #000; overflow: hidden; }
+      #ARButton { bottom: 50px !important; }
     </style>
   </head>
-
   <body>
     <script type="importmap">
       {
@@ -27,45 +21,55 @@
     </script>
     <script type="module">
       import * as THREE from 'three';
-      // ここでエラーが起きないよう、パスを addons/ 経由に変更
       import { ARButton } from 'three/addons/webxr/ARButton.js';
       import { SplatMesh } from '@sparkjsdev/spark';
 
       async function init() {
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ 
+            alpha: true, 
+            antialias: false, // 負荷軽減
+            powerPreference: "high-performance" // GPUを優先
+        });
+        renderer.setPixelRatio(1); // 解像度を抑えてフリーズ防止
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // ボタンを表示
         const btn = ARButton.createButton(renderer);
         document.body.appendChild(btn);
 
         const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
-        const butterfly = new SplatMesh({ url: splatURL });
-        butterfly.position.set(0, 0, -1);
-        scene.add(butterfly);
+        let butterfly;
 
-        let lastTime;
-        renderer.setAnimationLoop(function animate(time) {
-          const deltaTime = time - (lastTime || time);
-          lastTime = time;
-          if (butterfly) butterfly.rotation.y += deltaTime / 2500;
-          renderer.render(scene, camera);
+        // モデル読み込みを非同期で行い、完了後にシーンに追加
+        const loadModel = () => {
+            butterfly = new SplatMesh({ 
+                url: splatURL,
+                onLoad: () => {
+                    butterfly.position.set(0, 0, -2);
+                    scene.add(butterfly);
+                    console.log("Butterfly Loaded");
+                }
+            });
+        };
+
+        loadModel();
+
+        renderer.setAnimationLoop((time, frame) => {
+            // ARセッション中のみ更新
+            if (renderer.xr.isPresenting) {
+                if (butterfly) {
+                    butterfly.rotation.y += 0.01;
+                }
+            }
+            renderer.render(scene, camera);
         });
       }
 
-      init().catch(err => {
-        // エラーが出たら画面に表示する
-        const div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.top = '0';
-        div.innerHTML = 'Error: ' + err.message;
-        document.body.appendChild(div);
-      });
+      init();
     </script>
   </body>
 </html>
