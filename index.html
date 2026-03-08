@@ -3,39 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark 2.0 WebAR</title>
+    <title>WebAR Final Test</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
-        /* ARボタンを見やすく調整 */
-        #ARButton {
-            bottom: 50px !important;
-            background: rgba(255, 255, 255, 0.9) !important;
-            color: black !important;
-            border: none !important;
-            border-radius: 4px !important;
-            font-weight: bold !important;
-        }
+        body { margin: 0; background-color: #111; color: #0f0; font-family: monospace; }
         #status {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            font-size: 12px;
-            z-index: 9999;
-            pointer-events: none;
-            line-height: 1.5;
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.8); padding: 10px; z-index: 10000;
+            font-size: 14px; border-bottom: 1px solid #0f0;
         }
+        #ARButton { bottom: 50px !important; }
     </style>
 </head>
 <body>
-    <div id="status">Status: 準備中...</div>
+    <div id="status">Status: 起動プロセス開始...</div>
 
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.module.js",
-            "three/addons/": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/examples/jsm/",
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
             "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/preview/2.0.0/spark.module.js"
         }
     }
@@ -46,69 +32,45 @@
         import { ARButton } from "three/addons/webxr/ARButton.js";
         import { SplatMesh } from "@sparkjsdev/spark";
 
-        const statusElement = document.getElementById('status');
-        function log(msg) {
-            statusElement.innerHTML += "<br>" + msg;
-            console.log(msg);
-        }
+        const status = document.getElementById('status');
+        const log = (m) => { status.innerText = "Status: " + m; console.log(m); };
 
         async function init() {
             try {
-                // --- シーン基本設定 ---
+                log("ライブラリ読み込み完了。シーンを作成中...");
+                
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-                
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.xr.enabled = true; // WebXR有効化
+                renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                // AR開始ボタンを追加
-                const arButton = ARButton.createButton(renderer);
-                document.body.appendChild(arButton);
-                log("Three.js初期化完了。ARボタンを確認してください。");
+                const btn = ARButton.createButton(renderer);
+                document.body.appendChild(btn);
+                log("準備完了！下の【START AR】ボタンを押してください。");
 
-                // --- 3DGSモデルの読み込み ---
-                // model フォルダ内の A.spz を参照
-                const modelPath = "./model/A.spz";
-                log(`モデル読み込み開始: ${modelPath}`);
-
+                // モデル読み込み
                 const splat = new SplatMesh({ 
-                    url: modelPath,
-                    onLoad: () => {
-                        log("A.spz のロードに成功しました！");
-                    },
-                    onError: (err) => {
-                        log("エラー: モデルが見つかりません。パスを確認してください。");
-                        console.error(err);
-                    }
+                    url: "./model/A.spz",
+                    onLoad: () => log("モデル表示中！カメラを動かして探してください"),
+                    onError: (e) => log("エラー: ./model/A.spz が見つかりません")
                 });
-
-                // 初期位置：カメラの正面2m、少し下(-1m)に配置
-                splat.position.set(0, -1, -2);
+                
+                splat.position.set(0, 0, -2);
                 scene.add(splat);
 
-                // --- アニメーションループ ---
                 renderer.setAnimationLoop(() => {
-                    // モデルをゆっくり回転させる（動作確認用）
-                    if (splat) splat.rotation.y += 0.005;
                     renderer.render(scene, camera);
                 });
 
-                // ウィンドウリサイズ対応
-                window.addEventListener('resize', () => {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                });
-
             } catch (e) {
-                log("致命的なエラー: " + e.message);
+                log("致命的エラー: " + e.message);
             }
         }
 
-        init();
+        // ページ読み込み完了後に実行
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
