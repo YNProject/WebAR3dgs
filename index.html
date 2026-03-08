@@ -3,11 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spark • Hello World</title>
+    <title>Spark • WebAR Support</title>
     <style>
-      body {
-        margin: 0;
-      }
+      body { margin: 0; background-color: #000; }
     </style>
   </head>
 
@@ -16,12 +14,14 @@
       {
         "imports": {
           "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.module.js",
+          "three/addons/": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/examples/jsm/",
           "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
         }
       }
     </script>
     <script type="module">
       import * as THREE from 'three';
+      import { ARButton } from 'three/addons/webxr/ARButton.js'; // ARボタン用
       import { SplatMesh } from '@sparkjsdev/spark';
 
       const scene = new THREE.Scene();
@@ -31,22 +31,42 @@
         0.1,
         1000
       );
-      const renderer = new THREE.WebGLRenderer();
+
+      // WebAR用に alpha（透過）を true にし、XRを有効化
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true; // WebXRの有効化
       document.body.appendChild(renderer.domElement);
 
+      // 画面にAR開始ボタンを設置
+      document.body.appendChild(ARButton.createButton(renderer));
+
+      // モデルの読み込み（元の butterfly を使用）
       const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
       const butterfly = new SplatMesh({ url: splatURL });
-      butterfly.quaternion.set(1, 0, 0, 0);
-      butterfly.position.set(0, 0, -3);
+      
+      // 表示位置をARで見つけやすいよう -1 (1メートル前) に調整
+      butterfly.position.set(0, 0, -1);
       scene.add(butterfly);
 
       let lastTime;
       renderer.setAnimationLoop(function animate(time) {
         const deltaTime = time - (lastTime || time);
         lastTime = time;
+        
+        // butterflyがロードされたら回転させる
+        if (butterfly) {
+           butterfly.rotation.y += deltaTime / 2500;
+        }
+        
         renderer.render(scene, camera);
-        butterfly.rotation.y += deltaTime / 2500;
+      });
+
+      // リサイズ対応
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
       });
     </script>
   </body>
