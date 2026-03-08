@@ -3,16 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark AR Debug Mode</title>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; color: #0f0; font-family: monospace; }
-        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px; z-index: 1000; font-size: 12px; border-bottom: 1px solid #0f0; }
-        #ARButton { bottom: 50px !important; border: 2px solid #0f0 !important; }
-    </style>
+    <title>Spark AR - Documentation Driven</title>
+    <style>body { margin: 0; background: #000; overflow: hidden; }</style>
 </head>
 <body>
-    <div id="status">Status: Initializing Script...</div>
-
     <script type="importmap">
     {
         "imports": {
@@ -22,76 +16,56 @@
         }
     }
     </script>
-
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
-        import { SplatMesh, SparkRenderer, SplatLoader } from '@sparkjsdev/spark';
-
-        const statusElement = document.getElementById('status');
-        const log = (m) => { 
-            console.log(m);
-            statusElement.innerText = "Log: " + m; 
-        };
-
-        log("Module Loaded. Starting Init...");
+        import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
 
         async function init() {
-            try {
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-                const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.xr.enabled = true;
-                document.body.appendChild(renderer.domElement);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
+            const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            document.body.appendChild(ARButton.createButton(renderer));
 
-                // ボタンの作成を確認
-                const btn = ARButton.createButton(renderer);
-                if (btn) {
-                    document.body.appendChild(btn);
-                    log("AR Button Created. Press it!");
-                } else {
-                    log("AR Button Failed (Check HTTPS/Browser)");
+            // SparkRenderer を明示的に追加
+            const spark = new SparkRenderer({ renderer: renderer });
+            scene.add(spark);
+
+            const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
+            
+            // SplatMesh の作成
+            const splats = new SplatMesh({ 
+                url: splatURL,
+                // ドキュメントのヒント：毎フレーム実行される更新処理
+                onFrame: ({ mesh }) => {
+                    if (renderer.xr.isPresenting) {
+                        mesh.rotation.y += 0.01;
+                        // 強制的に再生成・描画を促す
+                        mesh.updateVersion(); 
+                    }
                 }
+            });
 
-                const spark = new SparkRenderer({ renderer: renderer, preUpdate: true });
-                scene.add(spark);
-
-                const loader = new SplatLoader();
-                const url = 'https://sparkjs.dev/assets/splats/butterfly.spz';
-
-                renderer.setAnimationLoop(() => {
-                    if (renderer.xr.isPresenting && !window.loadFlag) {
-                        window.loadFlag = true;
-                        log("AR Session Start! Downloading...");
-
-                        loader.loadAsync(url, (ev) => {
-                            if (ev.type === "progress") log(`Downloading: ${Math.round(ev.loaded/ev.total*100)}%`);
-                        })
-                        .then((packed) => {
-                            const mesh = new SplatMesh({ packedSplats: packed });
-                            mesh.quaternion.set(1, 0, 0, 0);
-                            mesh.position.set(0, 0, -1);
-                            scene.add(mesh);
-                            window.targetMesh = mesh;
-                            log("SUCCESS: Mesh added to scene!");
-                        })
-                        .catch(e => log("Load Error: " + e.message));
-                    }
-
-                    if (window.targetMesh) {
-                        window.targetMesh.rotation.y += 0.01;
-                        spark.update({ scene, camera });
-                    }
-                    renderer.render(scene, camera);
-                });
-
-            } catch (err) {
-                log("Fatal Error: " + err.message);
+            // ドキュメントのヒント：初期化を await で待つ
+            try {
+                await splats.initialized;
+                console.log("SplatMesh Initialized");
+                
+                // OpenCV -> OpenGL 座標変換（ドキュメントの別項に記載あり）
+                splats.quaternion.set(1, 0, 0, 0);
+                splats.position.set(0, 0, -1);
+                scene.add(splats);
+            } catch (e) {
+                console.error("Initialization failed", e);
             }
-        }
 
-        // 実行開始
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
+        }
         init();
     </script>
 </body>
