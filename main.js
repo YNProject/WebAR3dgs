@@ -1,112 +1,61 @@
-window.addEventListener("load", () => {
-    const sceneEl = document.querySelector('a-scene');
+import * as THREE from "three";
+import { SplatMesh } from "@sparkjsdev/spark";
+
+document.addEventListener("DOMContentLoaded", async () => {
     const startButton = document.getElementById("startButton");
-    const backButton = document.getElementById("backButton");
-    const shopButton = document.getElementById("shopButton");
-    const uiContainer = document.getElementById("ui-container");
     const overlay = document.getElementById("overlay");
+    const uiContainer = document.getElementById("ui-container");
+    const shopButton = document.getElementById("shopButton");
 
-    let currentActiveUrl = null;
+    // --- 1. MindAR のセットアップ ---
+    const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+        container: document.getElementById("ar-container"),
+        imageTargetSrc: 'img/targetsc1.mind', // あなたの .mind ファイル
+    });
 
-    const config = [
-        {
-            target: document.getElementById("target-0"),
-            display: document.getElementById("display-0"),
-            particleContainer: document.getElementById("particle-container-0"),
-            particleImg: "#particle-img-0",
-            audio: document.getElementById("audio1"),
-            url: "https://www.meiji.co.jp/products/icecream/4902705098626.html",
-            color: "#FFE135",
-            textColor: "#000",
-            particleTimer: null
-        },
-        {
-            target: document.getElementById("target-1"),
-            display: document.getElementById("display-1"),
-            particleContainer: document.getElementById("particle-container-1"),
-            particleImg: "#particle-img-1",
-            audio: document.getElementById("audio2"),
-            url: "https://www.meiji.co.jp/sweets/icecream/essel/otona/",
-            color: "#7B3F00",
-            textColor: "#FFF",
-            particleTimer: null
-        }
-    ];
+    const { renderer, scene, camera } = mindarThree;
 
-    const createParticles = (item) => {
-        const count = 15;        
-        const distance = 1.0;    
-        const duration = 2000;   
-        for (let i = 0; i < count; i++) {
-            const p = document.createElement('a-image');
-            p.setAttribute('src', item.particleImg);
-            p.setAttribute('width', '0.12');
-            p.setAttribute('height', '0.12');
-            p.setAttribute('material', 'transparent: true; alphaTest: 0.05; depthTest: false;');
-            const angle = (i / count) * Math.PI * 2; 
-            p.setAttribute('position', '0 0 0');
-            const destX = Math.cos(angle) * distance;
-            const destY = Math.sin(angle) * distance;
-            p.setAttribute('animation__move', `property: position; to: ${destX} ${destY} 0; dur: ${duration}; easing: easeOutQuad`);
-            p.setAttribute('animation__fade', `property: material.opacity; from: 1; to: 0; dur: ${duration}; easing: linear`);
-            item.particleContainer.appendChild(p);
-            setTimeout(() => { if(p.parentNode) p.parentNode.removeChild(p); }, duration);
-        }
+    // --- 2. Spark モデル (SplatMesh) の作成 ---
+    // モデルA (バナナチョコ)
+    const butterflyA = new SplatMesh({ url: "model/A.spz" });
+    butterflyA.visible = false;
+    
+    // モデルB (大人ラベル)
+    const butterflyB = new SplatMesh({ url: "model/B.spz" });
+    butterflyB.visible = false;
+
+    // MindARのアンカー（ターゲット）にモデルを紐付け
+    const anchorA = mindarThree.addAnchor(0);
+    anchorA.group.add(butterflyA);
+
+    const anchorB = mindarThree.addAnchor(1);
+    anchorB.group.add(butterflyB);
+
+    // --- 3. 検出イベント ---
+    anchorA.onTargetFound = () => {
+        butterflyA.visible = true;
+        shopButton.style.display = 'block';
+        shopButton.onclick = () => window.open("https://www.meiji.co.jp/...", "_blank");
     };
+    anchorA.onTargetLost = () => { butterflyA.visible = false; shopButton.style.display = 'none'; };
 
-    const startARDisplay = (item) => {
-        item.audio.play();
-        item.display.setAttribute("visible", "true");
-        createParticles(item); 
-        item.particleTimer = setInterval(() => { createParticles(item); }, 1500);
+    anchorB.onTargetFound = () => {
+        butterflyB.visible = true;
+        shopButton.style.display = 'block';
     };
+    anchorB.onTargetLost = () => { butterflyB.visible = false; shopButton.style.display = 'none'; };
 
-    const stopARDisplay = (item) => {
-        clearInterval(item.particleTimer);
-        item.audio.pause();
-        item.audio.currentTime = 0;
-        item.display.setAttribute("visible", "false");
-        item.particleContainer.innerHTML = ''; 
-    };
-
-    startButton.addEventListener('click', () => {
+    // --- 4. 開始処理 ---
+    startButton.addEventListener('click', async () => {
         overlay.style.display = 'none';
-        uiContainer.setAttribute('style', 'display: flex !important');
-        shopButton.style.display = 'none';
+        uiContainer.style.display = 'flex';
         
-        // 音声のロック解除
-        config.forEach(item => {
-            item.audio.play().then(() => { item.audio.pause(); item.audio.currentTime = 0; }).catch(e => console.log(e));
-        });
-
-        const arSystem = sceneEl.systems["mindar-image-system"];
-        if (arSystem) arSystem.start();
-    });
-
-    shopButton.addEventListener('click', () => {
-        if (currentActiveUrl) window.open(currentActiveUrl, '_blank');
-    });
-
-    backButton.addEventListener('click', () => {
-        location.reload();
-    });
-
-    config.forEach(item => {
-        item.target.addEventListener("targetFound", () => {
-            document.body.classList.add('target-found');
-            currentActiveUrl = item.url;
-            shopButton.style.display = 'block';
-            shopButton.style.backgroundColor = item.color;
-            shopButton.style.color = item.textColor;
-            shopButton.style.borderColor = item.color;
-            startARDisplay(item);
-        });
-
-        item.target.addEventListener("targetLost", () => {
-            document.body.classList.remove('target-found');
-            currentActiveUrl = null;
-            shopButton.style.display = 'none';
-            stopARDisplay(item);
+        await mindarThree.start();
+        
+        renderer.setAnimationLoop(() => {
+            renderer.render(scene, camera);
         });
     });
+
+    document.getElementById("backButton").addEventListener('click', () => location.reload());
 });
