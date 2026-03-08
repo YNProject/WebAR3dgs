@@ -1,77 +1,30 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3DGS AR Force Render</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: transparent; }
-        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; z-index: 10000; font-size: 11px; }
-    </style>
-</head>
-<body>
-    <div id="status">Status: 起動中...</div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-            "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/preview/2.0.0/spark.module.js"
-        }
+<style> body {margin: 0;} </style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.module.js",
+      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/preview/2.0.0/spark.module.js"
     }
-    </script>
+  }
+</script>
+<script type="module">
+  import * as THREE from "three";
+  import { SplatMesh } from "@sparkjsdev/spark";
 
-    <script type="module">
-        import * as THREE from "three";
-        import { ARButton } from "three/addons/webxr/ARButton.js";
-        import { SplatMesh } from "@sparkjsdev/spark";
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement)
 
-        const log = (m) => { document.getElementById('status').innerText = "Status: " + m; };
+  const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
+  const butterfly = new SplatMesh({ url: splatURL });
+  butterfly.quaternion.set(1, 0, 0, 0);
+  butterfly.position.set(0, 0, -3);
+  scene.add(butterfly);
 
-        async function init() {
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
-            
-            const renderer = new THREE.WebGLRenderer({ 
-                antialias: false, 
-                alpha: true,
-                stencil: false,
-                depth: true 
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
-            // 背景の不透明度を0にする
-            renderer.setClearColor(0x000000, 0); 
-            document.body.appendChild(renderer.domElement);
-            document.body.appendChild(ARButton.createButton(renderer));
-
-            const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
-            const splat = new SplatMesh({ 
-                url: splatURL,
-                onLoad: () => {
-                    log("SUCCESS: 目の前(0.5m)に出現させています");
-                    
-                    // --- 強制描画設定 ---
-                    splat.renderOrder = 9999; // 描画順を最大に
-                    if (splat.material) {
-                        splat.material.depthTest = false; // 深度テストを無効化（カメラ映像より前に出す）
-                        splat.material.depthWrite = false;
-                        splat.material.transparent = true;
-                    }
-                    
-                    splat.position.set(0, 0, -0.5); // 50cm正面
-                    splat.scale.set(0.5, 0.5, 0.5); // 確実に見えるサイズ
-                }
-            });
-            scene.add(splat);
-
-            renderer.setAnimationLoop(() => {
-                if (splat) splat.rotation.y += 0.05;
-                renderer.render(scene, camera);
-            });
-        }
-        window.onload = init;
-    </script>
-</body>
-</html>
+  renderer.setAnimationLoop(function animate(time) {
+    renderer.render(scene, camera);
+    butterfly.rotation.y += 0.01;
+  });
+</script>
