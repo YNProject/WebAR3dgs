@@ -55,18 +55,25 @@
                 const modelUrl = new URL('./model/A.spz', window.location.href).href;
                 log("Trying to load: " + modelUrl);
 
-                const splat = new SplatMesh({ 
-                    url: modelUrl,
-                    onLoad: () => {
-                        log("SUCCESS: A.spz loaded!");
-                        // 見つかりやすいように大きく、正面に配置
-                        splat.scale.set(1, 1, 1);
-                        splat.position.set(0, 0, -1.5); 
-                    },
-                    onError: (err) => {
-                        log("ERROR: Could not load file. Check if 'model/A.spz' exists and case-sensitivity.");
-                    }
-                });
+                // --- splatMeshの作成部分を以下に差し替え ---
+const splat = new SplatMesh({ 
+    url: modelUrl,
+    onLoad: () => {
+        log("SUCCESS: A.spz loaded!");
+        
+        // 1. サイズをかなり小さくする (0.01 = 1%)
+        splat.scale.set(0.01, 0.01, 0.01);
+        
+        // 2. 位置を調整 (正面2m、下に1.5m)
+        splat.position.set(0, -1.5, -2); 
+        
+        // 3. 回転が必要な場合が多いので、少し傾けてみる
+        splat.rotation.x = -Math.PI / 2; 
+    },
+    onError: (err) => {
+        log("ERROR: Load failed.");
+    }
+});
                 
                 scene.add(splat);
 
