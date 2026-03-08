@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SupercupWebAR Spark Edition</title>
+    <title>SupercupWebAR Spark 2.0</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
@@ -11,7 +11,7 @@
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.js",
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.module.js",
             "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/preview/2.0.0/spark.module.js"
         }
     }
@@ -24,8 +24,8 @@
         <h1>SupercupWebAR</h1>
         <p>マーカーをスキャンしてください</p>
         <div class="marker-guide">
-            <img src="img/sc1bcc.png" alt="マーカー1">
-            <img src="img/sc2ots.png" alt="マーカー2">
+            <img src="img/sc1bcc.png">
+            <img src="img/sc2ots.png">
         </div>
         <button id="startButton">ARを開始する</button>
     </div>
@@ -37,10 +37,11 @@
 
     <a-scene 
         id="ar-scene"
-        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no;" 
+        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
         embedded
         vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false">
+        device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true; antialias: true;">
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
