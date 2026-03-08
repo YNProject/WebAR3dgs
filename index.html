@@ -1,0 +1,32 @@
+<script src="https://cdn.jsdelivr.net/npm/aframe-gaussian-splatting@0.4.0/dist/aframe-gaussian-splatting.min.js"></script>
+
+<a-assets>
+    <audio id="audio1" src="music/sc1bcc.wav" preload="auto"></audio>
+    <audio id="audio2" src="music/sc2ots.wav" preload="auto"></audio>
+
+    <img id="particle-img-0" src="img/sc1bcc.png">
+    <img id="particle-img-1" src="img/sc2ots.png">
+
+    <a-asset-item id="model-a" src="model/A.spz"></a-asset-item>
+    <a-asset-item id="model-b" src="model/B.spz"></a-asset-item>
+</a-assets>
+
+<a-entity id="target-0" mindar-image-target="targetIndex: 0">
+    <a-entity id="display-0" 
+              gaussian_splatting="src: #model-a" 
+              rotation="0 0 0" 
+              scale="1 1 1" 
+              position="0 0 0">
+    </a-entity>
+    <a-entity id="particle-container-0" position="0 0 0"></a-entity>
+</a-entity>
+
+<a-entity id="target-1" mindar-image-target="targetIndex: 1">
+    <a-entity id="display-1" 
+              gaussian_splatting="src: #model-b" 
+              rotation="0 0 0" 
+              scale="1 1 1" 
+              position="0 0 0">
+    </a-entity>
+    <a-entity id="particle-container-1" position="0 0 0"></a-entity>
+</a-entity>
