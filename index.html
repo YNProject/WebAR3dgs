@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR Final Test</title>
+    <title>WebAR Path Debug</title>
     <style>
-        body { margin: 0; background-color: #111; color: #0f0; font-family: monospace; }
+        body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
         #status {
             position: fixed; top: 0; left: 0; width: 100%;
             background: rgba(0,0,0,0.8); padding: 10px; z-index: 10000;
-            font-size: 14px; border-bottom: 1px solid #0f0;
+            font-size: 12px; border-bottom: 1px solid #0f0; white-space: pre-wrap;
         }
         #ARButton { bottom: 50px !important; }
     </style>
 </head>
 <body>
-    <div id="status">Status: 起動プロセス開始...</div>
+    <div id="status">Status: Initializing...</div>
 
     <script type="importmap">
     {
@@ -33,43 +33,53 @@
         import { SplatMesh } from "@sparkjsdev/spark";
 
         const status = document.getElementById('status');
-        const log = (m) => { status.innerText = "Status: " + m; console.log(m); };
+        const log = (m) => { 
+            status.innerText += "\n> " + m; 
+            console.log(m);
+        };
 
         async function init() {
             try {
-                log("ライブラリ読み込み完了。シーンを作成中...");
-                
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
+                document.body.appendChild(ARButton.createButton(renderer));
 
-                const btn = ARButton.createButton(renderer);
-                document.body.appendChild(btn);
-                log("準備完了！下の【START AR】ボタンを押してください。");
+                log("Three.js Ready.");
 
-                // モデル読み込み
+                // --- パスの解決 ---
+                // GitHub Pagesのサブディレクトリ対策として、絶対URLを生成
+                const modelUrl = new URL('./model/A.spz', window.location.href).href;
+                log("Trying to load: " + modelUrl);
+
                 const splat = new SplatMesh({ 
-                    url: "./model/A.spz",
-                    onLoad: () => log("モデル表示中！カメラを動かして探してください"),
-                    onError: (e) => log("エラー: ./model/A.spz が見つかりません")
+                    url: modelUrl,
+                    onLoad: () => {
+                        log("SUCCESS: A.spz loaded!");
+                        // 見つかりやすいように大きく、正面に配置
+                        splat.scale.set(1, 1, 1);
+                        splat.position.set(0, 0, -1.5); 
+                    },
+                    onError: (err) => {
+                        log("ERROR: Could not load file. Check if 'model/A.spz' exists and case-sensitivity.");
+                    }
                 });
                 
-                splat.position.set(0, 0, -2);
                 scene.add(splat);
 
                 renderer.setAnimationLoop(() => {
+                    if (splat) splat.rotation.y += 0.01;
                     renderer.render(scene, camera);
                 });
 
             } catch (e) {
-                log("致命的エラー: " + e.message);
+                log("FATAL: " + e.message);
             }
         }
 
-        // ページ読み込み完了後に実行
         window.addEventListener('load', init);
     </script>
 </body>
