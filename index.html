@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Butterfly AR - Final Attempt</title>
+    <title>Butterfly AR Final Fix</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; color: #0f0; font-family: monospace; }
-        #status {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: rgba(0,0,0,0.9); padding: 15px; z-index: 10000;
-        }
+        body { margin: 0; overflow: hidden; background-color: #000; color: #0f0; font-family: monospace; }
+        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px; z-index: 10000; }
+        #ARButton { bottom: 50px !important; background: #0f0 !important; color: #000 !important; border-radius: 8px !important; }
     </style>
 </head>
 <body>
-    <div id="status">Status: Loading Libraries...</div>
+    <div id="status">Status: Loading...</div>
 
     <script type="importmap">
     {
@@ -34,42 +32,44 @@
 
         async function init() {
             try {
-                log("Setting up Scene...");
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
                 
+                // alpha: true はARにおいて絶対必須です
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                // ボタン作成
-                const btn = ARButton.createButton(renderer);
-                document.body.appendChild(btn);
-                log("Libraries Loaded! Tap 'START AR' at the bottom.");
+                document.body.appendChild(ARButton.createButton(renderer));
+                log("Ready. Tap START AR.");
 
-                // バタフライ読み込み
                 const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
                 const butterfly = new SplatMesh({ 
                     url: splatURL,
-                    onLoad: () => log("Butterfly Ready in AR!")
+                    onLoad: () => {
+                        log("Butterfly Ready! Look at your hand height.");
+                        // 描画順を最前面に
+                        butterfly.renderOrder = 999;
+                        // ARで見失わないようにかなり手前(0.5m)に配置
+                        butterfly.position.set(0, 0, -0.5);
+                    }
                 });
-
-                butterfly.position.set(0, 0, -1.5);
                 scene.add(butterfly);
 
+                // WebXR専用のループ処理
                 renderer.setAnimationLoop(() => {
-                    if (butterfly) butterfly.rotation.y += 0.01;
+                    if (butterfly) {
+                        butterfly.rotation.y += 0.02;
+                    }
                     renderer.render(scene, camera);
                 });
 
             } catch (e) {
                 log("Error: " + e.message);
-                console.error(e);
             }
         }
-
-        // 念のため window.onload で実行
         window.onload = init;
     </script>
 </body>
