@@ -3,23 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3DGS Finder</title>
+    <title>3DGS AR Force Finder</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; }
-        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 5px; z-index: 10; font-size: 11px; }
-        #controls { position: fixed; bottom: 100px; left: 10px; z-index: 20; display: flex; flex-wrap: wrap; gap: 5px; }
-        button { padding: 8px; font-size: 12px; background: #444; color: white; border: 1px solid #fff; }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; }
+        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px; z-index: 100; font-size: 11px; }
+        #ARButton { bottom: 50px !important; background: #0f0 !important; color: #000 !important; }
     </style>
 </head>
 <body>
-    <div id="status">Initializing...</div>
-    <div id="controls">
-        <button onclick="window.changeScale(0.001)">Scale: 0.001</button>
-        <button onclick="window.changeScale(0.01)">Scale: 0.01</button>
-        <button onclick="window.changeScale(0.1)">Scale: 0.1</button>
-        <button onclick="window.changeScale(1)">Scale: 1</button>
-        <button onclick="window.changeScale(10)">Scale: 10</button>
-    </div>
+    <div id="status">Status: Initializing...</div>
 
     <script type="importmap">
     {
@@ -37,20 +29,11 @@
         import { SplatMesh } from "@sparkjsdev/spark";
 
         const log = (m) => { document.getElementById('status').innerText += "\n> " + m; };
-        let currentSplat = null;
-
-        // グローバル関数として公開
-        window.changeScale = (s) => {
-            if (currentSplat) {
-                currentSplat.scale.set(s, s, s);
-                log("Scale changed to: " + s);
-            }
-        };
-
+        
         async function init() {
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
@@ -62,15 +45,21 @@
                 url: modelUrl,
                 onLoad: () => {
                     log("LOAD SUCCESS!");
-                    currentSplat = splat;
-                    // 最初は 0.1倍で、目の前に配置
-                    splat.scale.set(0.1, 0.1, 0.1);
-                    splat.position.set(0, 0, -2);
+                    // モデルを非常に小さくして原点に。
+                    splat.scale.set(0.05, 0.05, 0.05);
+                    splat.position.set(0, 0, -1.5); // カメラの目の前
+                    splat.frustumCulled = false; // 画面外判定で消えるのを防ぐ
                 }
             });
             scene.add(splat);
 
+            // 環境光も念のため追加
+            scene.add(new THREE.AmbientLight(0xffffff, 2));
+
             renderer.setAnimationLoop(() => {
+                // ARセッション中、モデルが常にカメラの方向を向く（または一定距離を保つ）
+                // 最初に見つけるまでは、自動で少しずつ回転させておく
+                if (splat) splat.rotation.y += 0.01;
                 renderer.render(scene, camera);
             });
         }
