@@ -17,21 +17,15 @@ window.addEventListener("load", () => {
     const overlay = document.getElementById("overlay");
 
     startButton.addEventListener('click', async () => {
-        // ボタンを押したら即座にオーバーレイを消す
-        overlay.style.display = 'none';
+        overlay.style.setProperty('display', 'none', 'important');
+        uiContainer.style.setProperty('display', 'flex', 'important');
         
         const arSystem = sceneEl.systems["mindar-image-system"];
         if (arSystem) {
-            console.log("AR System Starting...");
-            await arSystem.start(); // ここでカメラが起動するまで待つ
-            console.log("AR System Started!");
-            
-            // カメラが動き出してからUIを出す
-            uiContainer.style.display = 'flex';
+            await arSystem.start();
         }
     });
 
-    // ターゲットイベント
     const t0 = document.getElementById("target-0");
     const t1 = document.getElementById("target-1");
 
