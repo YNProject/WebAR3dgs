@@ -1,32 +1,76 @@
-<script src="https://cdn.jsdelivr.net/npm/aframe-gaussian-splatting@0.4.0/dist/aframe-gaussian-splatting.min.js"></script>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SupercupWebAR</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-gaussian-splatting@0.4.0/dist/aframe-gaussian-splatting.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<a-assets>
-    <audio id="audio1" src="music/sc1bcc.wav" preload="auto"></audio>
-    <audio id="audio2" src="music/sc2ots.wav" preload="auto"></audio>
+    <div id="overlay">
+        <div class="container">
+            <h1>SupercupWebAR</h1>
+            <p>下のマーカーをスキャンしてください</p>
+            <div class="marker-guide">
+                <div class="guide-item"><img src="img/sc1bcc.png"></div>
+                <div class="guide-item"><img src="img/sc2ots.png"></div>
+            </div>
+            <button id="startButton">ARを開始する</button>
+        </div>
+    </div>
 
-    <img id="particle-img-0" src="img/sc1bcc.png">
-    <img id="particle-img-1" src="img/sc2ots.png">
+    <div id="ui-container">
+        <button id="backButton">タイトルへ戻る</button>
+        <button id="shopButton">詳しく見る</button>
+    </div>
 
-    <a-asset-item id="model-a" src="model/A.spz"></a-asset-item>
-    <a-asset-item id="model-b" src="model/B.spz"></a-asset-item>
-</a-assets>
+    <a-scene 
+        id="ar-scene"
+        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiScanning: yes; uiLoading: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001;" 
+        embedded
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        color-space="sRGB" 
+        renderer="colorManagement: true; physicallyCorrectLights: true; transparent: true; alpha: true;">
+        
+        <a-assets>
+            <audio id="audio1" src="music/sc1bcc.wav" preload="auto"></audio>
+            <audio id="audio2" src="music/sc2ots.wav" preload="auto"></audio>
+            <img id="particle-img-0" src="img/sc1bcc.png">
+            <img id="particle-img-1" src="img/sc2ots.png">
 
-<a-entity id="target-0" mindar-image-target="targetIndex: 0">
-    <a-entity id="display-0" 
-              gaussian_splatting="src: #model-a" 
-              rotation="0 0 0" 
-              scale="1 1 1" 
-              position="0 0 0">
-    </a-entity>
-    <a-entity id="particle-container-0" position="0 0 0"></a-entity>
-</a-entity>
+            <a-asset-item id="model-a" src="model/A.spz"></a-asset-item>
+            <a-asset-item id="model-b" src="model/B.spz"></a-asset-item>
+        </a-assets>
 
-<a-entity id="target-1" mindar-image-target="targetIndex: 1">
-    <a-entity id="display-1" 
-              gaussian_splatting="src: #model-b" 
-              rotation="0 0 0" 
-              scale="1 1 1" 
-              position="0 0 0">
-    </a-entity>
-    <a-entity id="particle-container-1" position="0 0 0"></a-entity>
-</a-entity>
+        <a-camera position="0 0 0" look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
+
+        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+            <a-entity id="display-0" 
+                      gaussian_splatting="src: #model-a" 
+                      rotation="0 0 0" 
+                      scale="1 1 1"
+                      visible="false">
+            </a-entity>
+            <a-entity id="particle-container-0" position="0 0 0"></a-entity>
+        </a-entity>
+
+        <a-entity id="target-1" mindar-image-target="targetIndex: 1">
+            <a-entity id="display-1" 
+                      gaussian_splatting="src: #model-b" 
+                      rotation="0 0 0" 
+                      scale="1 1 1"
+                      visible="false">
+            </a-entity>
+            <a-entity id="particle-container-1" position="0 0 0"></a-entity>
+        </a-entity>
+
+    </a-scene>
+
+    <script src="main.js"></script>
+</body>
+</html>
