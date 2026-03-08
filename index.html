@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Butterfly AR Final Fix</title>
+    <title>3DGS AR Mass Display</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; color: #0f0; font-family: monospace; }
-        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px; z-index: 10000; }
-        #ARButton { bottom: 50px !important; background: #0f0 !important; color: #000 !important; border-radius: 8px !important; }
+        #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 15px; z-index: 10000; font-size: 11px; }
+        #ARButton { bottom: 50px !important; background: #0f0 !important; color: #000 !important; }
     </style>
 </head>
 <body>
-    <div id="status">Status: Loading...</div>
+    <div id="status">Status: 準備中...</div>
 
     <script type="importmap">
     {
@@ -31,44 +31,52 @@
         const log = (m) => { document.getElementById('status').innerText = "Status: " + m; };
 
         async function init() {
-            try {
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-                
-                // alpha: true はARにおいて絶対必須です
-                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.xr.enabled = true;
-                document.body.appendChild(renderer.domElement);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            document.body.appendChild(ARButton.createButton(renderer));
 
-                document.body.appendChild(ARButton.createButton(renderer));
-                log("Ready. Tap START AR.");
+            log("READY: START ARを押して、周囲を見渡してください");
 
-                const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
+            const splatURL = "https://sparkjs.dev/assets/splats/butterfly.spz";
+            
+            // --- 大量配置の処理 ---
+            const count = 12; // 12匹配置する
+            const butterflies = [];
+
+            for (let i = 0; i < count; i++) {
                 const butterfly = new SplatMesh({ 
                     url: splatURL,
                     onLoad: () => {
-                        log("Butterfly Ready! Look at your hand height.");
-                        // 描画順を最前面に
+                        log(`${i+1}/${count} 読み込み完了！`);
                         butterfly.renderOrder = 999;
-                        // ARで見失わないようにかなり手前(0.5m)に配置
-                        butterfly.position.set(0, 0, -0.5);
                     }
                 });
+
+                // 円状に配置しつつ、高さもランダムに変える
+                const angle = (i / count) * Math.PI * 2;
+                const radius = 2.0; // 半径2メートルの円
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = (Math.random() - 0.5) * 2; // 地面から見上げる高さまでランダム
+
+                butterfly.position.set(x, y, z);
+                // 全ての蝶が中心（あなた）を向くように調整
+                butterfly.lookAt(0, 0, 0);
+                
                 scene.add(butterfly);
-
-                // WebXR専用のループ処理
-                renderer.setAnimationLoop(() => {
-                    if (butterfly) {
-                        butterfly.rotation.y += 0.02;
-                    }
-                    renderer.render(scene, camera);
-                });
-
-            } catch (e) {
-                log("Error: " + e.message);
+                butterflies.push(butterfly);
             }
+
+            renderer.setAnimationLoop(() => {
+                butterflies.forEach(b => {
+                    if (b) b.rotation.z += 0.01; // 少し動きをつける
+                });
+                renderer.render(scene, camera);
+            });
         }
         window.onload = init;
     </script>
