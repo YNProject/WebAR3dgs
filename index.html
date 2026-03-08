@@ -3,13 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spark • WebAR Fix</title>
+    <title>Spark • WebAR Override</title>
     <style>
-      body { margin: 0; background-color: #000; overflow: hidden; }
-      #ARButton { bottom: 50px !important; }
+      body { margin: 0; background: transparent; overflow: hidden; }
+      /* カメラ映像を一番奥、3Dをその上に配置 */
+      video, canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; }
+      #status { position: fixed; top: 10px; left: 10px; color: #0f0; z-index: 100; background: rgba(0,0,0,0.5); font-family: monospace; }
+      #ARButton { bottom: 50px !important; z-index: 1000; }
     </style>
   </head>
   <body>
+    <div id="status">Status: 待機中...</div>
     <script type="importmap">
       {
         "imports": {
@@ -24,52 +28,46 @@
       import { ARButton } from 'three/addons/webxr/ARButton.js';
       import { SplatMesh } from '@sparkjsdev/spark';
 
+      const log = (m) => { document.getElementById('status').innerText = m; };
+
       async function init() {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 
+        // レンダラー設定を極限までシンプルに
         const renderer = new THREE.WebGLRenderer({ 
             alpha: true, 
-            antialias: false, // 負荷軽減
-            powerPreference: "high-performance" // GPUを優先
+            antialias: false,
+            preserveDrawingBuffer: true 
         });
-        renderer.setPixelRatio(1); // 解像度を抑えてフリーズ防止
+        renderer.setPixelRatio(1);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const btn = ARButton.createButton(renderer);
-        document.body.appendChild(btn);
+        document.body.appendChild(ARButton.createButton(renderer));
 
+        // バタフライ
         const splatURL = 'https://sparkjs.dev/assets/splats/butterfly.spz';
-        let butterfly;
+        const butterfly = new SplatMesh({ 
+            url: splatURL,
+            onLoad: () => {
+                log("Butterfly Loaded!");
+                butterfly.position.set(0, 0, -1);
+                scene.add(butterfly);
+            }
+        });
 
-        // モデル読み込みを非同期で行い、完了後にシーンに追加
-        const loadModel = () => {
-            butterfly = new SplatMesh({ 
-                url: splatURL,
-                onLoad: () => {
-                    butterfly.position.set(0, 0, -2);
-                    scene.add(butterfly);
-                    console.log("Butterfly Loaded");
-                }
-            });
-        };
-
-        loadModel();
-
-        renderer.setAnimationLoop((time, frame) => {
-            // ARセッション中のみ更新
+        renderer.setAnimationLoop(() => {
             if (renderer.xr.isPresenting) {
-                if (butterfly) {
-                    butterfly.rotation.y += 0.01;
-                }
+                log("AR Session Active");
+                if (butterfly) butterfly.rotation.y += 0.02;
             }
             renderer.render(scene, camera);
         });
       }
 
-      init();
+      init().catch(e => log("Error: " + e.message));
     </script>
   </body>
 </html>
