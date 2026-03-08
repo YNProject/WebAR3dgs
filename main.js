@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { SplatMesh } from "@sparkjsdev/spark";
 
-// Sparkモデルを表示するためのA-Frameコンポーネント
 AFRAME.registerComponent('spark-model', {
     schema: { src: {type: 'string'} },
     init: function () {
@@ -13,40 +12,33 @@ AFRAME.registerComponent('spark-model', {
 window.addEventListener("load", () => {
     const sceneEl = document.querySelector('a-scene');
     const startButton = document.getElementById("startButton");
-    const backButton = document.getElementById("backButton");
+    const uiContainer = document.getElementById("ui-container");
     const shopButton = document.getElementById("shopButton");
     const overlay = document.getElementById("overlay");
-    const uiContainer = document.getElementById("ui-container");
 
-    let currentUrl = "";
-
-    // AR起動
-    startButton.addEventListener('click', () => {
+    startButton.addEventListener('click', async () => {
+        // ボタンを押したら即座にオーバーレイを消す
         overlay.style.display = 'none';
-        uiContainer.style.display = 'flex'; // ボタンを表示
         
         const arSystem = sceneEl.systems["mindar-image-system"];
         if (arSystem) {
-            arSystem.start();
+            console.log("AR System Starting...");
+            await arSystem.start(); // ここでカメラが起動するまで待つ
+            console.log("AR System Started!");
+            
+            // カメラが動き出してからUIを出す
+            uiContainer.style.display = 'flex';
         }
     });
 
-    // 検出イベント管理
-    const setupTarget = (id, url) => {
-        const target = document.getElementById(id);
-        target.addEventListener("targetFound", () => {
-            currentUrl = url;
-            shopButton.style.display = 'block';
-        });
-        target.addEventListener("targetLost", () => {
-            shopButton.style.display = 'none';
-        });
-    };
+    // ターゲットイベント
+    const t0 = document.getElementById("target-0");
+    const t1 = document.getElementById("target-1");
 
-    setupTarget("target-0", "https://www.meiji.co.jp/products/icecream/4902705098626.html");
-    setupTarget("target-1", "https://www.meiji.co.jp/sweets/icecream/essel/otona/");
+    t0.addEventListener("targetFound", () => { shopButton.style.display = 'block'; });
+    t0.addEventListener("targetLost", () => { shopButton.style.display = 'none'; });
+    t1.addEventListener("targetFound", () => { shopButton.style.display = 'block'; });
+    t1.addEventListener("targetLost", () => { shopButton.style.display = 'none'; });
 
-    // ボタンクリック
-    shopButton.addEventListener('click', () => { if (currentUrl) window.open(currentUrl, '_blank'); });
-    backButton.addEventListener('click', () => { location.reload(); });
+    document.getElementById("backButton").addEventListener('click', () => location.reload());
 });
