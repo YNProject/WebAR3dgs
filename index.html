@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark 2.0 WebAR Viewer</title>
+    <title>Debug WebAR</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #ar-button {
-            position: absolute; bottom: 20px; left: 50%;
-            transform: translateX(-50%); padding: 12px 24px;
-            background: #fff; border: none; border-radius: 8px; font-weight: bold;
-        }
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; }
+        #status { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; z-index: 100; font-size: 12px; }
     </style>
+</head>
+<body>
+    <div id="status">Status: 起動中...</div>
+
     <script type="importmap">
     {
         "imports": {
@@ -21,47 +21,51 @@
         }
     }
     </script>
-</head>
-<body>
+
     <script type="module">
         import * as THREE from "three";
         import { ARButton } from "three/addons/webxr/ARButton.js";
         import { SplatMesh } from "@sparkjsdev/spark";
 
-        // --- シーン設定 ---
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+        const status = document.getElementById('status');
         
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.xr.enabled = true; // WebXRを有効化
-        document.body.appendChild(renderer.domElement);
-
-        // AR開始ボタンを追加
-        document.body.appendChild(ARButton.createButton(renderer));
-
-        // --- Spark 2.0 スプラット読み込み ---
-        // A.spz が同じフォルダにある想定です
-        const splat = new SplatMesh({ url: "A.spz" });
-        
-        // カメラの目の前（3m奥）に配置
-        splat.position.set(0, 0, -3);
-        scene.add(splat);
-
-        // --- レンダリングループ ---
-        renderer.setAnimationLoop(() => {
-            // 必要に応じて回転させる
-            // splat.rotation.y += 0.01;
-            renderer.render(scene, camera);
-        });
-
-        // リサイズ対応
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+        try {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // ARボタンを追加
+            const btn = ARButton.createButton(renderer);
+            document.body.appendChild(btn);
+            status.innerHTML = "Status: Three.js起動完了。ARボタンを確認してください。";
+
+            // Splat読み込み
+            status.innerHTML += "<br>A.spzを読み込み中...";
+            const splat = new SplatMesh({ 
+                url: "A.spz",
+                onLoad: () => {
+                    status.innerHTML += "<br>A.spz読み込み成功！";
+                    splat.position.set(0, 0, -2);
+                },
+                onError: (err) => {
+                    status.innerHTML += "<br>エラー: A.spzが見つからないか壊れています。";
+                    console.error(err);
+                }
+            });
+            scene.add(splat);
+
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
+
+        } catch (e) {
+            status.innerHTML = "エラー発生: " + e.message;
+            console.error(e);
+        }
     </script>
 </body>
 </html>
