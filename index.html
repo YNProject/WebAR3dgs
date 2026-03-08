@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SupercupWebAR Spark Edition</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
-
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-
     <script type="importmap">
     {
         "imports": {
@@ -17,10 +16,10 @@
         }
     }
     </script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div id="overlay">
         <div class="container">
             <h1>SupercupWebAR</h1>
@@ -38,7 +37,25 @@
         <button id="shopButton">詳しく見る</button>
     </div>
 
-    <div id="ar-container"></div>
+    <a-scene 
+        id="ar-scene"
+        mindar-image="imageTargetSrc: img/targetsc1.mind; autoStart: false; uiScanning: yes; uiLoading: no; uiError: no;" 
+        embedded
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true; transparent: true; alpha: true;">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+            <a-entity id="model-a" spark-model="src: model/A.spz" scale="1 1 1" position="0 0 0"></a-entity>
+        </a-entity>
+
+        <a-entity id="target-1" mindar-image-target="targetIndex: 1">
+            <a-entity id="model-b" spark-model="src: model/B.spz" scale="1 1 1" position="0 0 0"></a-entity>
+        </a-entity>
+
+    </a-scene>
 
     <script type="module" src="main.js"></script>
 </body>
