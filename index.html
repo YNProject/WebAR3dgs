@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3DGS AR Force Finder</title>
+    <title>3DGS AR Final Fix</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; }
         #status { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px; z-index: 100; font-size: 11px; }
-        #ARButton { bottom: 50px !important; background: #0f0 !important; color: #000 !important; }
+        #ARButton { bottom: 50px !important; }
     </style>
 </head>
 <body>
-    <div id="status">Status: Initializing...</div>
+    <div id="status">Status: 準備中...</div>
 
     <script type="importmap">
     {
@@ -29,11 +29,11 @@
         import { SplatMesh } from "@sparkjsdev/spark";
 
         const log = (m) => { document.getElementById('status').innerText += "\n> " + m; };
-        
+
         async function init() {
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
@@ -45,21 +45,30 @@
                 url: modelUrl,
                 onLoad: () => {
                     log("LOAD SUCCESS!");
-                    // モデルを非常に小さくして原点に。
-                    splat.scale.set(0.05, 0.05, 0.05);
-                    splat.position.set(0, 0, -1.5); // カメラの目の前
-                    splat.frustumCulled = false; // 画面外判定で消えるのを防ぐ
+                    
+                    // --- 強制中心補正アルゴリズム ---
+                    // 1. バウンディングボックス（モデルの範囲）を計算
+                    const box = new THREE.Box3().setFromObject(splat);
+                    const center = new THREE.Vector3();
+                    box.getCenter(center);
+                    
+                    // 2. モデル自体の位置をマイナス方向にずらして「中心」を(0,0,0)にする
+                    splat.position.sub(center);
+                    
+                    // 3. 全体をまとめる親グループを作成して、カメラの前に配置
+                    const wrapper = new THREE.Group();
+                    scene.add(wrapper);
+                    wrapper.add(splat);
+                    
+                    // スケール調整（PCで見えたなら0.1〜1.0くらいが適正なはず）
+                    wrapper.scale.set(0.1, 0.1, 0.1);
+                    wrapper.position.set(0, 0, -1); // カメラの1m正面に固定
+                    
+                    log("Model centered and moved to camera front.");
                 }
             });
-            scene.add(splat);
-
-            // 環境光も念のため追加
-            scene.add(new THREE.AmbientLight(0xffffff, 2));
 
             renderer.setAnimationLoop(() => {
-                // ARセッション中、モデルが常にカメラの方向を向く（または一定距離を保つ）
-                // 最初に見つけるまでは、自動で少しずつ回転させておく
-                if (splat) splat.rotation.y += 0.01;
                 renderer.render(scene, camera);
             });
         }
